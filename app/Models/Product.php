@@ -13,7 +13,8 @@ class Product extends Model
         'name',
         'price',
         'description',
-        'has_variations'
+        'has_variations',
+        'image_path'
     ];
 
     protected $casts = [

@@ -24,6 +24,11 @@
         let typingInterval = setInterval(startTyping, $data.typeSpeed);
     
         function startTyping(){
+            // Make this function local to this component only
+            if (typeof window.startTyping === 'undefined') {
+                window.startTyping = function() {}; // Create an empty function to avoid errors
+            }
+            
             let current = $data.textArray[ $data.textIndex ];
             
             // check to see if we hit the end of the string
@@ -62,13 +67,17 @@
         }
                     
         setInterval(function(){
-            if($refs.cursor.classList.contains('hidden'))
-            {
-                $refs.cursor.classList.remove('hidden');
-            } 
-            else 
-            {
-                $refs.cursor.classList.add('hidden');
+            // Check if cursor element exists before accessing its classList
+            const cursorElement = $refs.cursor;
+            if (cursorElement && cursorElement.classList) {
+                if(cursorElement.classList.contains('hidden'))
+                {
+                    cursorElement.classList.remove('hidden');
+                } 
+                else 
+                {
+                    cursorElement.classList.add('hidden');
+                }
             }
         }, $data.cursorSpeed);
 

@@ -12,8 +12,14 @@
             </a>
 
             <flux:navbar class="-mb-px max-lg:hidden">
-                <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
+                <flux:navbar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
+                </flux:navbar.item>
+                <flux:navbar.item icon="shopping-bag" :href="route('pos.index')" :current="request()->routeIs('pos.index')" wire:navigate>
+                    {{ __('POS') }}
+                </flux:navbar.item>
+                <flux:navbar.item icon="package" :href="route('admin.products')" :current="request()->routeIs('admin.products')" wire:navigate>
+                    {{ __('Product Manager') }}
                 </flux:navbar.item>
             </flux:navbar>
 
@@ -73,6 +79,7 @@
                     <flux:menu.separator />
 
                     <flux:menu.radio.group>
+                        <flux:menu.item :href="route('admin.products')" icon="shopping-bag" wire:navigate>{{ __('Product Manager') }}</flux:menu.item>
                         <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
                     </flux:menu.radio.group>
 
@@ -98,8 +105,14 @@
 
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')">
-                    <flux:navlist.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
+                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                       {{ __('Dashboard') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="shopping-bag" :href="route('pos.index')" :current="request()->routeIs('pos.index')" wire:navigate>
+                      {{ __('POS') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="package" :href="route('admin.products')" :current="request()->routeIs('admin.products')" wire:navigate>
+                      {{ __('Product Manager') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>

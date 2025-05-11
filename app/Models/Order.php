@@ -12,11 +12,17 @@ class Order extends Model
         'user_id',
         'total',
         'status',
-        'notes'
+        'notes',
+        'delivery_time',
+        'delivery_status',
+        'customer_name',
+        'customer_phone',
+        'delivery_address'
     ];
 
     protected $casts = [
         'total' => 'decimal:2',
+        'delivery_time' => 'datetime',
     ];
 
     public function user(): BelongsTo

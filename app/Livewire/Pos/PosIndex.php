@@ -10,6 +10,8 @@ use App\Models\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
+use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
 
 class PosIndex extends Component
 {
@@ -24,25 +26,70 @@ class PosIndex extends Component
     public array $cart = [];
     public float $total = 0;
 
+    // Customer Information
+    public ?string $customerName = null;
+    public ?string $customerPhone = null;
+    public ?string $deliveryAddress = null;
+
+    // Tab Navigation with state persistence
+    #[Url]
+    public string $activeTab = 'pos';
+
+    #[Url]
+    public ?int $selectedCategoryId = null;
+
+    public function initComponent()
+    {
+        // This is called by wire:init in the template
+        // Load products if category is already selected
+        if ($this->selectedCategoryId) {
+            $this->loadProductsForCategory($this->selectedCategoryId);
+        }
+    }
+
     public function mount()
     {
         try {
             $this->categories = Category::all();
             Log::info('Categories loaded: ' . $this->categories->count());
             $this->products = collect();
-            $this->resetSelection();
+
+            // Don't reset selection if coming back to page
+            if (!$this->selectedCategoryId) {
+                $this->resetSelection();
+            }
         } catch (\Exception $e) {
             Log::error('Error in PosIndex mount: ' . $e->getMessage());
+            $this->dispatch('showToast', [
+                'type' => 'danger',
+                'message' => 'Error Loading Categories',
+                'description' => 'There was a problem loading menu categories.'
+            ]);
+        }
+    }
+
+    protected function loadProductsForCategory(int $categoryId)
+    {
+        try {
+            $this->products = Product::where('category_id', $categoryId)->get();
+            Log::info('Products loaded for category ' . $categoryId . ': ' . $this->products->count());
+        } catch (\Exception $e) {
+            Log::error('Error loading products for category: ' . $e->getMessage());
         }
     }
 
     public function selectCategory(Category $category)
     {
         try {
-            $this->products = Product::where('category_id', $category->id)->get();
-            Log::info('Products loaded for category ' . $category->id . ': ' . $this->products->count());
+            $this->selectedCategoryId = $category->id;
+            $this->loadProductsForCategory($category->id);
         } catch (\Exception $e) {
             Log::error('Error in selectCategory: ' . $e->getMessage());
+            $this->dispatch('showToast', [
+                'type' => 'danger',
+                'message' => 'Error Loading Products',
+                'description' => 'There was a problem loading products for this category.'
+            ]);
         }
     }
 
@@ -89,11 +136,17 @@ class PosIndex extends Component
     public function addToCart()
     {
         if (!$this->selectedProduct) {
+            $this->dispatch('showToast', [
+                'type' => 'warning',
+                'message' => 'No Product Selected',
+                'description' => 'Please select a product to add to cart.'
+            ]);
             return;
         }
 
         $variation = null;
         $unitPrice = $this->selectedProduct->price;
+        $productName = $this->selectedProduct->name;
 
         if ($this->selectedVariationId) {
             $variation = $this->selectedProduct->variations->firstWhere('id', $this->selectedVariationId);
@@ -120,7 +173,7 @@ class PosIndex extends Component
 
         $this->cart[] = [
             'product_id' => $this->selectedProduct->id,
-            'product_name' => $this->selectedProduct->name,
+            'product_name' => $productName,
             'variation_id' => $variation ? $variation->id : null,
             'variation_name' => $variation ? $variation->name : null,
             'options' => $optionsData,
@@ -130,16 +183,33 @@ class PosIndex extends Component
             'notes' => $this->notes
         ];
 
+        $quantity = $this->quantity;
+
         $this->updateTotal();
         $this->resetSelection();
+
+        $this->dispatch('showToast', [
+            'type' => 'success',
+            'message' => 'Item Added to Cart',
+            'description' => 'Added ' . $quantity . 'x ' . $productName
+        ]);
     }
 
     public function removeFromCart($index)
     {
         if (isset($this->cart[$index])) {
+            $item = $this->cart[$index];
+            $productName = $item['product_name'];
+
             unset($this->cart[$index]);
             $this->cart = array_values($this->cart); // Reindex array
             $this->updateTotal();
+
+            $this->dispatch('showToast', [
+                'type' => 'info',
+                'message' => 'Item Removed',
+                'description' => 'Removed ' . $productName . ' from cart'
+            ]);
         }
     }
 
@@ -151,40 +221,122 @@ class PosIndex extends Component
         }
     }
 
-    public function processOrder()
+    public function confirmOrderProcessing()
     {
         if (empty($this->cart)) {
+            $this->dispatch('showToast', [
+                'type' => 'warning',
+                'message' => 'Empty Cart',
+                'description' => 'Please add items to the cart before placing an order.'
+            ]);
+            return;
+        }
+
+        $this->dispatch('showConfirmation', [
+            'title' => 'Process Order',
+            'message' => 'Are you sure you want to process this order?',
+            'confirmText' => 'Process Order',
+            'cancelText' => 'Cancel',
+            'action' => 'processOrderConfirmed'
+        ]);
+    }
+
+    #[On('processOrderConfirmed')]
+    public function processOrderConfirmed()
+    {
+        Log::info('processOrderConfirmed method called via attribute listener');
+        $this->processOrder();
+    }
+
+    #[On('resetCartAfterOrder')]
+    public function resetCartAfterOrder()
+    {
+        Log::info('Resetting cart after successful order');
+        $this->cart = [];
+        $this->total = 0;
+        $this->customerName = null;
+        $this->customerPhone = null;
+        $this->deliveryAddress = null;
+        $this->resetSelection();
+    }
+
+    public function processOrder()
+    {
+        Log::info('processOrder method started');
+
+        if (empty($this->cart)) {
+            $this->dispatch('showToast', [
+                'type' => 'warning',
+                'message' => 'Empty Cart',
+                'description' => 'Please add items to the cart before placing an order.'
+            ]);
+            Log::info('Empty cart, returning early');
             return;
         }
 
         try {
-            // Using hardcoded user ID 1 for the demo
-            $order = Order::create([
-                'user_id' => 1, // Use test user
+            Log::info('Attempting to create order with data: ', [
                 'total' => $this->total,
-                'status' => 'pending'
+                'customer_name' => $this->customerName,
+                'items_count' => count($this->cart)
             ]);
 
+            // Creating order with explicit array values to avoid any issues
+            $orderData = [
+                'user_id' => 1, // Use test user
+                'total' => floatval($this->total),
+                'status' => 'pending',
+                'customer_name' => $this->customerName ?? '',
+                'customer_phone' => $this->customerPhone ?? '',
+                'delivery_address' => $this->deliveryAddress ?? ''
+            ];
+
+            Log::info('Order data prepared', $orderData);
+
+            // Using hardcoded user ID 1 for the demo
+            $order = new Order();
+            $order->user_id = 1;
+            $order->total = floatval($this->total);
+            $order->status = 'pending';
+            $order->customer_name = $this->customerName ?? '';
+            $order->customer_phone = $this->customerPhone ?? '';
+            $order->delivery_address = $this->deliveryAddress ?? '';
+            $order->save();
+
+            Log::info('Order created with ID: ' . $order->id);
+
             foreach ($this->cart as $item) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item['product_id'],
-                    'variation_id' => $item['variation_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'subtotal' => $item['subtotal'],
-                    'options' => $item['options'],
-                    'notes' => $item['notes']
-                ]);
+                $orderItem = new OrderItem();
+                $orderItem->order_id = $order->id;
+                $orderItem->product_id = $item['product_id'];
+                $orderItem->variation_id = $item['variation_id'];
+                $orderItem->quantity = $item['quantity'];
+                $orderItem->unit_price = floatval($item['unit_price']);
+                $orderItem->subtotal = floatval($item['subtotal']);
+                $orderItem->options = $item['options'];
+                $orderItem->notes = $item['notes'] ?? '';
+                $orderItem->save();
             }
 
-            $this->cart = [];
-            $this->total = 0;
+            Log::info('Order items created successfully');
 
-            session()->flash('message', 'Order successfully created!');
+            $this->dispatch('showToast', [
+                'type' => 'success',
+                'message' => 'Order Created',
+                'description' => 'Order #' . $order->id . ' has been created successfully!'
+            ]);
+
+            // Refresh the order history component
+            $this->dispatch('refreshOrderHistory');
+            Log::info('Order process completed successfully');
         } catch (\Exception $e) {
             Log::error('Error in processOrder: ' . $e->getMessage());
-            session()->flash('error', 'Error creating order: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            $this->dispatch('showToast', [
+                'type' => 'danger',
+                'message' => 'Order Creation Failed',
+                'description' => 'An error occurred while processing the order: ' . $e->getMessage()
+            ]);
         }
     }
 
