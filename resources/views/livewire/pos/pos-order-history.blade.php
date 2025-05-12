@@ -60,6 +60,7 @@
                     >
                         <option value="">All Statuses</option>
                         <option value="pending">Pending</option>
+                        <option value="preparing">Preparing</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
@@ -123,6 +124,7 @@
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                             {{ $order->status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : '' }}
                                             {{ $order->status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : '' }}
+                                            {{ $order->status === 'preparing' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' : '' }}
                                             {{ $order->status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : '' }}
                                         ">
                                             {{ ucfirst($order->status) }}
@@ -308,8 +310,8 @@
                     </p>
                     
                     <!-- Order Status Placeholder Image -->
-                    <div class="mb-4 flex-shrink-0 text-center" id="order-status-container-{{ $selectedOrder->id }}">
-                        <div class="rounded-lg bg-zinc-100 dark:bg-zinc-700 p-3 inline-block" id="order-status-image-{{ $selectedOrder->id }}">
+                    <div class="w-full mb-4 flex-shrink-0 text-center" id="order-status-container-{{ $selectedOrder->id }}">
+                        <div class="w-full p-0 rounded-lg bg-zinc-100 dark:bg-zinc-700" id="order-status-image-{{ $selectedOrder->id }}">
                             @if($selectedOrder->status === 'completed')
                                 <div class="h-24 w-24 mx-auto">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
@@ -319,12 +321,12 @@
                                     </svg>
                                 </div>
                             @elseif($selectedOrder->status === 'pending')
-                                <div class="h-24 w-24 mx-auto">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                         class="w-full h-full text-yellow-500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <polyline points="12 6 12 12 16 14"></polyline>
-                                    </svg>
+                                <div class="w-full h-70 mx-auto">
+                                    <iframe src="https://lottie.host/embed/9ecec3e3-274b-4dd8-84c2-c5ee22cf63b4/ZkmxKAgfES.lottie" style="width: 100%; height: 100%; border: none;" allow="autoplay"></iframe>
+                                </div>
+                            @elseif($selectedOrder->status === 'preparing')
+                                <div class="w-full h-70 mx-auto">
+                                    <iframe src="https://lottie.host/embed/39653fe9-2a1d-4dd1-a2b2-90bac8c3a1d5/iL08MJfeZE.lottie" style="width: 100%; height: 100%; border: none;" allow="autoplay"></iframe>
                                 </div>
                             @elseif($selectedOrder->status === 'cancelled')
                                 <div class="h-24 w-24 mx-auto">
@@ -345,9 +347,6 @@
                                     </svg>
                                 </div>
                             @endif
-                            <p class="text-sm mt-2 font-medium dark:text-white">
-                                {{ ucfirst($selectedOrder->status) }}
-                            </p>
                         </div>
                     </div>
                     
@@ -360,6 +359,7 @@
                                 <span class="px-2 py-1 text-sm font-semibold rounded-full 
                                     {{ $selectedOrder->status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : '' }}
                                     {{ $selectedOrder->status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : '' }}
+                                    {{ $selectedOrder->status === 'preparing' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' : '' }}
                                     {{ $selectedOrder->status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : '' }}
                                 ">
                                     {{ ucfirst($selectedOrder->status) }}
@@ -368,6 +368,14 @@
                             
                             <!-- Status Actions -->
                             <div class="flex space-x-2 mt-3">
+                                @if($selectedOrder->status === 'pending')
+                                <button 
+                                    wire:click="confirmPrepareOrder('{{ $selectedOrder->id }}')"
+                                    class="px-3 py-2 rounded-md text-sm bg-yellow-600 text-white hover:bg-yellow-700"
+                                >
+                                    Start Preparing
+                                </button>
+                                @endif
                                 <button 
                                     wire:click="confirmCompleteOrder('{{ $selectedOrder->id }}')" 
                                     @class([

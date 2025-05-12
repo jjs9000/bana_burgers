@@ -9,6 +9,7 @@ use Livewire\WithPagination;
 use Livewire\Attributes\Url;
 use Livewire\Attributes\On;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class PosOrderHistory extends Component
 {
@@ -114,8 +115,20 @@ class PosOrderHistory extends Component
         ]);
     }
 
-    #[On('cancelOrder')]
-    public function cancelOrder($orderId = null)
+    public function confirmPrepareOrder($orderId)
+    {
+        $this->dispatch('showConfirmation', [
+            'title' => 'Prepare Order',
+            'message' => 'Are you ready to start preparing this order?',
+            'confirmText' => 'Start Preparing',
+            'cancelText' => 'Not Yet',
+            'action' => 'prepareOrder',
+            'params' => $orderId
+        ]);
+    }
+
+    #[On('prepareOrder')]
+    public function prepareOrder($orderId = null)
     {
         // For Livewire v3, the parameter comes in as an array, so we need to extract it
         if (is_array($orderId) && isset($orderId['orderId'])) {
@@ -127,12 +140,13 @@ class PosOrderHistory extends Component
             $this->dispatch('showToast', [
                 'type' => 'danger',
                 'message' => 'Order not found',
-                'description' => 'The order you are trying to cancel cannot be found'
+                'description' => 'The order you are trying to update cannot be found'
             ]);
             return;
         }
 
-        $order->status = 'cancelled';
+        // Now this will work since the database has been updated
+        $order->status = 'preparing';
         $order->save();
 
         // Refresh the selected order to update the UI
@@ -141,9 +155,9 @@ class PosOrderHistory extends Component
         }
 
         $this->dispatch('showToast', [
-            'type' => 'warning',
-            'message' => 'Order Cancelled',
-            'description' => 'Order #' . $order->display_id . ' has been cancelled'
+            'type' => 'success',
+            'message' => 'Order Being Prepared',
+            'description' => 'Order #' . $order->display_id . ' is now being prepared'
         ]);
 
         // No need to dispatch a refresh event, just refresh the component
