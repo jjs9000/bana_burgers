@@ -7,6 +7,7 @@ use App\Models\Category;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\On;
 
 class ProductManager extends Component
 {
@@ -79,7 +80,7 @@ class ProductManager extends Component
         $this->resetForm();
     }
 
-    public function save()
+    public function confirmSave()
     {
         $this->validate([
             'name' => 'required|min:3',
@@ -89,66 +90,98 @@ class ProductManager extends Component
             'image' => 'nullable|image|max:1024', // max 1MB
         ]);
 
-        $data = [
-            'name' => $this->name,
-            'price' => $this->price,
-            'description' => $this->description,
-            'category_id' => $this->categoryId,
-            'has_variations' => $this->hasVariations,
-        ];
+        // After successful validation, show confirmation dialog
+        $actionText = $this->isEditing ? 'update' : 'create';
+        $productName = $this->name;
 
-        // Handle image upload
-        if ($this->image) {
-            // Delete old image if exists
-            if ($this->isEditing) {
-                $product = Product::find($this->productId);
-                if ($product && $product->image_path) {
-                    Storage::disk('public')->delete($product->image_path);
+        $this->dispatch('showConfirmation', [
+            'title' => ($this->isEditing ? 'Update' : 'Create') . ' Product',
+            'message' => "Are you sure you want to $actionText \"$productName\"?",
+            'confirmText' => $this->isEditing ? 'Update' : 'Create',
+            'cancelText' => 'Cancel',
+            'action' => 'saveConfirmed'
+        ]);
+    }
+
+    #[On('saveConfirmed')]
+    public function save()
+    {
+        try {
+            $data = [
+                'name' => $this->name,
+                'price' => $this->price,
+                'description' => $this->description,
+                'category_id' => $this->categoryId,
+                'has_variations' => $this->hasVariations,
+            ];
+
+            // Handle image upload
+            if ($this->image) {
+                // Delete old image if exists
+                if ($this->isEditing) {
+                    $product = Product::find($this->productId);
+                    if ($product && $product->image_path) {
+                        Storage::disk('public')->delete($product->image_path);
+                    }
                 }
+
+                // Store new image
+                $imagePath = $this->image->store('products', 'public');
+                $data['image_path'] = $imagePath;
             }
 
-            // Store new image
-            $imagePath = $this->image->store('products', 'public');
-            $data['image_path'] = $imagePath;
-        }
+            if ($this->isEditing) {
+                Product::find($this->productId)->update($data);
+                $this->dispatch('showToast', [
+                    'type' => 'success',
+                    'message' => 'Product Updated',
+                    'description' => 'Product has been updated successfully'
+                ]);
+            } else {
+                Product::create($data);
+                $this->dispatch('showToast', [
+                    'type' => 'success',
+                    'message' => 'Product Created',
+                    'description' => 'Product has been created successfully'
+                ]);
+            }
 
-        if ($this->isEditing) {
-            Product::find($this->productId)->update($data);
+            $this->refreshData();
+            $this->dispatch('productSaved');
+            $this->resetForm();
+        } catch (\Exception $e) {
             $this->dispatch('showToast', [
-                'type' => 'success',
-                'message' => 'Product Updated',
-                'description' => 'Product has been updated successfully'
-            ]);
-        } else {
-            Product::create($data);
-            $this->dispatch('showToast', [
-                'type' => 'success',
-                'message' => 'Product Created',
-                'description' => 'Product has been created successfully'
+                'type' => 'danger',
+                'message' => 'Error Saving Product',
+                'description' => 'There was a problem saving the product: ' . $e->getMessage()
             ]);
         }
-
-        $this->refreshData();
-        $this->showForm = false;
-        $this->resetForm();
     }
 
     public function delete(Product $product)
     {
-        // Delete product image if exists
-        if ($product->image_path) {
-            Storage::disk('public')->delete($product->image_path);
+        try {
+            // Delete product image if exists
+            if ($product->image_path) {
+                Storage::disk('public')->delete($product->image_path);
+            }
+
+            $product->delete();
+
+            $this->dispatch('showToast', [
+                'type' => 'info',
+                'message' => 'Product Deleted',
+                'description' => 'Product has been deleted successfully'
+            ]);
+
+            $this->refreshData();
+        } catch (\Exception $e) {
+            $this->dispatch('showToast', [
+                'type' => 'danger',
+                'message' => 'Error Deleting Product',
+                'description' => 'There was a problem deleting the product: ' . $e->getMessage()
+            ]);
         }
-
-        $product->delete();
-
-        $this->dispatch('showToast', [
-            'type' => 'info',
-            'message' => 'Product Deleted',
-            'description' => 'Product has been deleted successfully'
-        ]);
-
-        $this->refreshData();
     }
 
     public function render()

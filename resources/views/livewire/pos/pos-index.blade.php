@@ -1,4 +1,4 @@
-<div class="flex flex-col min-h-screen w-full bg-zinc-50 dark:bg-zinc-900" wire:init="initComponent">
+<div class="bg-zinc-50 dark:bg-zinc-900 w-full h-full" wire:init="initComponent">
     <!-- Include Toast Component -->
     <x-toast />
     
@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js" defer></script>
 
     <!-- Success Modal Popup -->
-    <div id="orderSuccessModal" class="fixed inset-0 z-50 flex items-center justify-center hidden" style="background-color: rgba(0, 0, 0, 0.5); pointer-events: none;">
+    <div id="orderSuccessModal" class="fixed inset-0 z-[160] flex items-center justify-center hidden" style="background-color: rgba(0, 0, 0, 0.5); pointer-events: none;">
         <div class="bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-8 max-w-md w-full mx-4 transform transition-all">
             <div id="successTickAnimation" class="w-40 h-40 mx-auto mb-6"></div>
             <h2 
@@ -141,7 +141,7 @@
     </script>
 
     <!-- Tab Navigation -->
-    <div class="w-full bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 px-4 py-2">
+    <div class="w-full bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 px-4 py-2 h-14 flex-shrink-0">
         <div
             x-data="{
                 // Initialize tabSelected directly from Livewire state
@@ -212,21 +212,21 @@
     </div>
 
     <!-- Tab Content -->
-    <div class="w-full">
+    <div class="w-full h-[calc(100%-3.5rem)]">
         <!-- POS Tab Content -->
-        <div x-data="{}" x-show="$wire.activeTab === 'pos'" x-transition.opacity.duration.300ms>
+        <div x-data="{}" x-show="$wire.activeTab === 'pos'" x-transition.opacity.duration.300ms class="h-full">
             <!-- Main Container -->
-            <div class="flex flex-col lg:flex-row w-full p-4 gap-4">
+            <div class="flex flex-col lg:flex-row w-full h-full p-2 gap-2">
                 <!-- Left Side - Menu Selection -->
-                <div class="w-full lg:w-2/3 flex flex-col space-y-4">
+                <div class="w-full lg:w-2/3 flex flex-col gap-2 h-full">
                     <!-- Categories -->
-                    <div class="bg-white dark:bg-zinc-800 rounded-lg shadow p-4">
-                        <h2 class="text-lg font-bold mb-3 dark:text-white">Categories</h2>
+                    <div class="bg-white dark:bg-zinc-800 rounded-lg shadow p-3 h-[80px] flex-shrink-0">
+                        <h2 class="text-lg font-bold mb-2 dark:text-white">Categories</h2>
                         <div class="flex flex-wrap gap-2">
                             @foreach($categories as $category)
                                 <button 
                                     wire:click="selectCategory({{ $category->id }})"
-                                    class="px-4 py-2 rounded-md border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 dark:text-white"
+                                    class="px-3 py-1 rounded-md border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 dark:text-white text-sm"
                                 >
                                     {{ $category->name }}
                                 </button>
@@ -235,25 +235,25 @@
                     </div>
                     
                     <!-- Products -->
-                    <div class="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 flex-grow">
-                        <h2 class="text-lg font-bold mb-3 dark:text-white">Menu Items</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="bg-white dark:bg-zinc-800 rounded-lg shadow p-3 flex-grow flex flex-col">
+                        <h2 class="text-lg font-bold mb-2 dark:text-white">Menu Items</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto flex-grow">
                             @foreach($products as $product)
                                 <div 
-                                    wire:click="selectProduct({{ $product->id }})"
-                                    class="bg-zinc-50 dark:bg-zinc-700 p-4 rounded-lg shadow cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-600 transition"
+                                    wire:click="selectProduct('{{ $product->id }}')"
+                                    class="bg-zinc-50 dark:bg-zinc-700 p-3 rounded-lg shadow cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-600 transition h-[300px] flex flex-col"
                                 >
                                     <!-- Placeholder Image -->
-                                    <div class="w-full h-36 mb-3 bg-zinc-200 dark:bg-zinc-600 rounded-md overflow-hidden">
+                                    <div class="w-full h-50% mb-2 bg-zinc-200 dark:bg-zinc-600 rounded-md overflow-hidden flex-shrink-0">
                                         <img 
                                             src="{{ $product->image_path ? asset('storage/' . $product->image_path) : 'https://placehold.co/300x200/10B981/FFFFFF?text=' . urlencode($product->name) }}" 
                                             alt="{{ $product->name }}" 
                                             class="w-full h-full object-cover"
                                         >
                                     </div>
-                                    <h3 class="font-bold dark:text-white">{{ $product->name }}</h3>
-                                    <p class="text-zinc-500 dark:text-zinc-300 text-sm">{{ $product->description }}</p>
-                                    <p class="mt-2 font-semibold dark:text-white">RM{{ number_format($product->price, 2) }}</p>
+                                    <h3 class="font-bold dark:text-white text-sm line-clamp-1">{{ $product->name }}</h3>
+                                    <p class="text-zinc-500 dark:text-zinc-300 text-xs line-clamp-2 flex-grow">{{ Str::limit($product->description, 40) }}</p>
+                                    <p class="mt-1 font-semibold dark:text-white text-sm">RM{{ number_format($product->price, 2) }}</p>
                                 </div>
                             @endforeach
                         </div>
@@ -261,21 +261,21 @@
                 </div>
                 
                 <!-- Right Side - Order Details -->
-                <div class="w-full lg:w-1/3 flex flex-col space-y-4">
+                <div class="w-full lg:w-1/3 flex flex-col gap-2 h-full">
                     <!-- Product Customization -->
                     @if($selectedProduct)
-                    <div class="bg-white dark:bg-zinc-800 rounded-lg shadow p-4">
-                        <h2 class="text-lg font-bold mb-3 dark:text-white">Customize {{ $selectedProduct->name }}</h2>
+                    <div class="bg-white dark:bg-zinc-800 rounded-lg shadow p-3 flex-shrink-0">
+                        <h2 class="text-lg font-bold mb-2 dark:text-white">Customize {{ $selectedProduct->name }}</h2>
                         
                         <!-- Variations (if applicable) -->
                         @if($selectedProduct->has_variations)
-                        <div class="mb-4">
-                            <h3 class="font-medium mb-2 dark:text-white">Variation</h3>
+                        <div class="mb-3">
+                            <h3 class="font-medium mb-1 dark:text-white text-sm">Variation</h3>
                             <div class="flex flex-wrap gap-2">
                                 @foreach($selectedProduct->variations as $variation)
                                     <button 
                                         wire:click="$set('selectedVariationId', {{ $variation->id }})"
-                                        class="px-3 py-1 rounded-md text-sm border 
+                                        class="px-2 py-1 rounded-md text-xs border 
                                             {{ $selectedVariationId == $variation->id 
                                                 ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black' 
                                                 : 'border-zinc-200 dark:border-zinc-700 dark:text-white' }}
@@ -292,16 +292,16 @@
                         @endif
                         
                         <!-- Options -->
-                        <div class="mb-4">
-                            <h3 class="font-medium mb-2 dark:text-white">Options</h3>
+                        <div class="mb-3">
+                            <h3 class="font-medium mb-1 dark:text-white text-sm">Options</h3>
                             
                             <!-- Onion Options -->
                             <div class="mb-2">
-                                <p class="text-sm text-zinc-600 dark:text-zinc-300 mb-1">Onion</p>
+                                <p class="text-xs text-zinc-600 dark:text-zinc-300 mb-1">Onion</p>
                                 <div class="flex flex-wrap gap-2">
                                     <button 
                                         wire:click="updateOption('Onion', 'extra')"
-                                        class="px-3 py-1 rounded-md text-sm border 
+                                        class="px-2 py-1 rounded-md text-xs border 
                                             {{ isset($selectedOptions['Onion']) && $selectedOptions['Onion'] === 'extra'
                                                 ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black' 
                                                 : 'border-zinc-200 dark:border-zinc-700 dark:text-white' }}
@@ -311,7 +311,7 @@
                                     </button>
                                     <button 
                                         wire:click="updateOption('Onion', 'less')"
-                                        class="px-3 py-1 rounded-md text-sm border 
+                                        class="px-2 py-1 rounded-md text-xs border 
                                             {{ isset($selectedOptions['Onion']) && $selectedOptions['Onion'] === 'less'
                                                 ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black' 
                                                 : 'border-zinc-200 dark:border-zinc-700 dark:text-white' }}
@@ -321,7 +321,7 @@
                                     </button>
                                     <button 
                                         wire:click="updateOption('Onion', 'no')"
-                                        class="px-3 py-1 rounded-md text-sm border 
+                                        class="px-2 py-1 rounded-md text-xs border 
                                             {{ isset($selectedOptions['Onion']) && $selectedOptions['Onion'] === 'no'
                                                 ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black' 
                                                 : 'border-zinc-200 dark:border-zinc-700 dark:text-white' }}
@@ -334,11 +334,11 @@
                             
                             <!-- Lettuce Options -->
                             <div>
-                                <p class="text-sm text-zinc-600 dark:text-zinc-300 mb-1">Lettuce</p>
+                                <p class="text-xs text-zinc-600 dark:text-zinc-300 mb-1">Lettuce</p>
                                 <div class="flex flex-wrap gap-2">
                                     <button 
                                         wire:click="updateOption('Lettuce', 'extra')"
-                                        class="px-3 py-1 rounded-md text-sm border 
+                                        class="px-2 py-1 rounded-md text-xs border 
                                             {{ isset($selectedOptions['Lettuce']) && $selectedOptions['Lettuce'] === 'extra'
                                                 ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black' 
                                                 : 'border-zinc-200 dark:border-zinc-700 dark:text-white' }}
@@ -348,7 +348,7 @@
                                     </button>
                                     <button 
                                         wire:click="updateOption('Lettuce', 'less')"
-                                        class="px-3 py-1 rounded-md text-sm border 
+                                        class="px-2 py-1 rounded-md text-xs border 
                                             {{ isset($selectedOptions['Lettuce']) && $selectedOptions['Lettuce'] === 'less'
                                                 ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black' 
                                                 : 'border-zinc-200 dark:border-zinc-700 dark:text-white' }}
@@ -358,7 +358,7 @@
                                     </button>
                                     <button 
                                         wire:click="updateOption('Lettuce', 'no')"
-                                        class="px-3 py-1 rounded-md text-sm border 
+                                        class="px-2 py-1 rounded-md text-xs border 
                                             {{ isset($selectedOptions['Lettuce']) && $selectedOptions['Lettuce'] === 'no'
                                                 ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black' 
                                                 : 'border-zinc-200 dark:border-zinc-700 dark:text-white' }}
@@ -371,19 +371,19 @@
                         </div>
                         
                         <!-- Quantity -->
-                        <div class="mb-4">
-                            <h3 class="font-medium mb-2 dark:text-white">Quantity</h3>
+                        <div class="mb-3">
+                            <h3 class="font-medium mb-1 dark:text-white text-sm">Quantity</h3>
                             <div class="flex items-center">
                                 <button 
                                     wire:click="decrementQuantity"
-                                    class="flex items-center justify-center w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 dark:text-white"
+                                    class="flex items-center justify-center w-6 h-6 rounded-full border border-zinc-200 dark:border-zinc-700 dark:text-white"
                                 >
                                     -
                                 </button>
-                                <span class="mx-4 font-medium dark:text-white">{{ $quantity }}</span>
+                                <span class="mx-3 font-medium dark:text-white">{{ $quantity }}</span>
                                 <button 
                                     wire:click="incrementQuantity"
-                                    class="flex items-center justify-center w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 dark:text-white"
+                                    class="flex items-center justify-center w-6 h-6 rounded-full border border-zinc-200 dark:border-zinc-700 dark:text-white"
                                 >
                                     +
                                 </button>
@@ -391,11 +391,11 @@
                         </div>
                         
                         <!-- Notes -->
-                        <div class="mb-4">
-                            <h3 class="font-medium mb-2 dark:text-white">Notes</h3>
+                        <div class="mb-3">
+                            <h3 class="font-medium mb-1 dark:text-white text-sm">Notes</h3>
                             <textarea 
                                 wire:model.live="notes" 
-                                class="w-full border border-zinc-200 dark:border-zinc-700 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-zinc-500 bg-zinc-50 dark:bg-zinc-700 dark:text-white"
+                                class="w-full border border-zinc-200 dark:border-zinc-700 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-zinc-500 bg-zinc-50 dark:bg-zinc-700 dark:text-white text-xs"
                                 placeholder="Any special instructions..."
                                 rows="2"
                             ></textarea>
@@ -405,13 +405,13 @@
                         <div class="flex justify-between">
                             <button 
                                 wire:click="resetSelection"
-                                class="px-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700 dark:text-white"
+                                class="px-3 py-1 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700 dark:text-white text-sm"
                             >
                                 Cancel
                             </button>
                             <button 
                                 wire:click="addToCart"
-                                class="px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200"
+                                class="px-3 py-1 bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 text-sm"
                             >
                                 Add to Cart
                             </button>
@@ -420,20 +420,20 @@
                     @endif
                     
                     <!-- Cart -->
-                    <div class="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 flex-grow">
-                        <h2 class="text-lg font-bold mb-3 dark:text-white">Order Summary</h2>
+                    <div class="bg-white dark:bg-zinc-800 rounded-lg shadow p-3 flex flex-col {{ count($cart) === 0 ? ($selectedProduct ? 'h-[150px]' : 'h-[200px]') : 'flex-grow max-h-[calc(100vh-380px)]' }}">
+                        <h2 class="text-lg font-bold mb-2 dark:text-white flex-shrink-0">Order Summary</h2>
                         
                         <!-- Regular Cart View -->
-                        <div id="cartView">
+                        <div id="cartView" class="flex flex-col flex-grow">
                             @if(count($cart) > 0)
-                                <div class="mb-4 space-y-3">
+                                <div class="mb-3 space-y-2 overflow-y-auto flex-grow max-h-[calc(100vh-480px)]">
                                     @foreach($cart as $index => $item)
-                                        <div class="border-b border-zinc-200 dark:border-zinc-700 pb-3">
+                                        <div class="border-b border-zinc-200 dark:border-zinc-700 pb-2">
                                             <div class="flex justify-between items-start">
                                                 <div>
-                                                    <h3 class="font-semibold dark:text-white">{{ $item['product_name'] }}</h3>
+                                                    <h3 class="font-semibold dark:text-white text-sm">{{ $item['product_name'] }}</h3>
                                                     @if($item['variation_name'])
-                                                        <p class="text-sm text-zinc-600 dark:text-zinc-300">{{ $item['variation_name'] }}</p>
+                                                        <p class="text-xs text-zinc-600 dark:text-zinc-300">{{ $item['variation_name'] }}</p>
                                                     @endif
                                                     
                                                     <!-- Options -->
@@ -453,19 +453,19 @@
                                                     @endif
                                                     
                                                     <div class="flex items-center mt-1">
-                                                        <span class="text-sm text-zinc-600 dark:text-zinc-300">
+                                                        <span class="text-xs text-zinc-600 dark:text-zinc-300">
                                                             RM{{ number_format($item['unit_price'], 2) }} x {{ $item['quantity'] }}
                                                         </span>
                                                     </div>
                                                 </div>
                                                 
                                                 <div class="flex items-center space-x-2">
-                                                    <span class="font-medium dark:text-white">RM{{ number_format($item['subtotal'], 2) }}</span>
+                                                    <span class="font-medium dark:text-white text-xs">RM{{ number_format($item['subtotal'], 2) }}</span>
                                                     <button 
                                                         wire:click="removeFromCart({{ $index }})"
                                                         class="text-zinc-500 hover:text-red-500 dark:text-zinc-400 dark:hover:text-red-400"
                                                     >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                                         </svg>
                                                     </button>
@@ -475,39 +475,39 @@
                                     @endforeach
                                 </div>
                                 
-                                <div class="border-t border-zinc-200 dark:border-zinc-700 pt-3">
-                                    <div class="flex justify-between items-center mb-4">
+                                <div class="border-t border-zinc-200 dark:border-zinc-700 pt-2 flex-shrink-0">
+                                    <div class="flex justify-between items-center mb-3">
                                         <span class="font-bold dark:text-white">Total</span>
                                         <span class="font-bold text-lg dark:text-white">RM{{ number_format($total, 2) }}</span>
                                     </div>
 
                                     <!-- Customer Information -->
-                                    <div class="mb-4">
-                                        <h3 class="font-medium mb-2 dark:text-white">Customer Information</h3>
-                                        <div class="space-y-3">
+                                    <div class="mb-3">
+                                        <h3 class="font-medium mb-1 dark:text-white text-sm">Customer Information</h3>
+                                        <div class="space-y-2">
                                             <div>
-                                                <label class="block text-sm text-zinc-500 dark:text-zinc-400 mb-1">Customer Name</label>
+                                                <label class="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">Customer Name</label>
                                                 <input 
                                                     type="text"
                                                     wire:model="customerName" 
-                                                    class="w-full p-2 border border-zinc-200 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-500 bg-zinc-50 dark:bg-zinc-700 dark:text-white text-sm"
+                                                    class="w-full p-1 border border-zinc-200 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-500 bg-zinc-50 dark:bg-zinc-700 dark:text-white text-xs"
                                                     placeholder="Enter customer name"
                                                 >
                                             </div>
                                             <div>
-                                                <label class="block text-sm text-zinc-500 dark:text-zinc-400 mb-1">Phone Number</label>
+                                                <label class="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">Phone Number</label>
                                                 <input 
                                                     type="text"
                                                     wire:model="customerPhone" 
-                                                    class="w-full p-2 border border-zinc-200 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-500 bg-zinc-50 dark:bg-zinc-700 dark:text-white text-sm"
+                                                    class="w-full p-1 border border-zinc-200 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-500 bg-zinc-50 dark:bg-zinc-700 dark:text-white text-xs"
                                                     placeholder="Enter phone number"
                                                 >
                                             </div>
                                             <div>
-                                                <label class="block text-sm text-zinc-500 dark:text-zinc-400 mb-1">Delivery Address</label>
+                                                <label class="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">Delivery Address</label>
                                                 <textarea 
                                                     wire:model="deliveryAddress" 
-                                                    class="w-full p-2 border border-zinc-200 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-500 bg-zinc-50 dark:bg-zinc-700 dark:text-white text-sm"
+                                                    class="w-full p-1 border border-zinc-200 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-500 bg-zinc-50 dark:bg-zinc-700 dark:text-white text-xs"
                                                     placeholder="Enter delivery address (if applicable)"
                                                     rows="2"
                                                 ></textarea>
@@ -517,15 +517,15 @@
                                     
                                     <button 
                                         wire:click="confirmOrderProcessing"
-                                        class="w-full py-3 bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 font-medium"
+                                        class="w-full py-2 bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 font-medium text-sm"
                                     >
                                         Complete Order
                                     </button>
                                 </div>
                             @else
-                                <div class="text-center py-8 text-zinc-500 dark:text-zinc-400">
+                                <div class="text-center py-4 text-zinc-500 dark:text-zinc-400">
                                     <p>Your cart is empty</p>
-                                    <p class="text-sm mt-2">Select items from the menu to add them to your order.</p>
+                                    <p class="text-xs mt-1">Select items from the menu to add them to your order.</p>
                                 </div>
                             @endif
                         </div>
@@ -535,7 +535,7 @@
         </div>
 
         <!-- Order History Tab -->
-        <div x-data="{}" x-show="$wire.activeTab === 'history'" x-transition.opacity.duration.300ms>
+        <div x-data="{}" x-show="$wire.activeTab === 'history'" x-transition.opacity.duration.300ms class="h-full">
             @livewire('pos.pos-order-history')
         </div>
     </div>
@@ -553,13 +553,13 @@
                 
                 // If this is a success message for order creation, show the animation
                 if (data[0].type === 'success' && data[0].message.includes('Order Created')) {
-                    // Extract order ID from the message
-                    const orderIdMatch = data[0].description.match(/Order #(\d+)/);
+                    // Extract order ID from the message - updated to match 3-digit format
+                    const orderIdMatch = data[0].description.match(/Order #(\d{3})/);
                     const orderId = orderIdMatch ? orderIdMatch[1] : '';
                     
                     console.log('Success toast detected for order creation - Order ID:', orderId);
+                    console.log('Raw description string:', data[0].description);
                     console.log('Toast message:', data[0].message);
-                    console.log('Toast description:', data[0].description);
                     
                     // Prevent any other actions during animation duration
                     // Show the success animation with a small delay to ensure toast is processed first
@@ -585,7 +585,15 @@
                         // Check if we have an orderId parameter
                         if (data[0].params) {
                             console.log('With params:', data[0].params);
-                            Livewire.dispatch(data[0].action, { orderId: data[0].params });
+                            // For debugging, dump the params
+                            console.log('Params type:', typeof data[0].params, 'Value:', data[0].params);
+                            
+                            // Create a proper payload
+                            const payload = { orderId: data[0].params };
+                            console.log('Dispatching with payload:', payload);
+                            
+                            // Dispatch with payload
+                            Livewire.dispatch(data[0].action, payload);
                         } else {
                             console.log('Without params, dispatching to:', data[0].action);
                             try {

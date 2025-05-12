@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class OrderItem extends Model
 {
+    use HasUuids;
+
     protected $fillable = [
         'order_id',
         'product_id',
@@ -17,6 +20,9 @@ class OrderItem extends Model
         'options',
         'notes'
     ];
+
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $casts = [
         'unit_price' => 'decimal:2',

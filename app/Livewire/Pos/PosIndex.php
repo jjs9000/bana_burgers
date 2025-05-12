@@ -96,7 +96,7 @@ class PosIndex extends Component
     public function selectProduct(Product $product)
     {
         $this->selectedProduct = $product;
-        $this->selectedVariationId = $product->has_variations
+        $this->selectedVariationId = $product->has_variations && $product->variations->count() > 0
             ? $product->variations->first()->id
             : null;
         $this->resetOptions();
@@ -144,55 +144,64 @@ class PosIndex extends Component
             return;
         }
 
-        $variation = null;
-        $unitPrice = $this->selectedProduct->price;
-        $productName = $this->selectedProduct->name;
+        try {
+            $variation = null;
+            $unitPrice = $this->selectedProduct->price;
+            $productName = $this->selectedProduct->name;
 
-        if ($this->selectedVariationId) {
-            $variation = $this->selectedProduct->variations->firstWhere('id', $this->selectedVariationId);
-            $unitPrice += $variation ? $variation->additional_price : 0;
-        }
-
-        $optionPrice = 0;
-        $optionsData = [];
-
-        foreach ($this->selectedOptions as $name => $type) {
-            $option = Option::where('name', $name)->where('type', $type)->first();
-            if ($option) {
-                $optionPrice += $option->additional_price;
-                $optionsData[] = [
-                    'name' => $option->name,
-                    'type' => $option->type,
-                    'price' => $option->additional_price
-                ];
+            if ($this->selectedVariationId && $this->selectedProduct->has_variations) {
+                $variation = $this->selectedProduct->variations->firstWhere('id', $this->selectedVariationId);
+                $unitPrice += $variation ? $variation->additional_price : 0;
             }
+
+            $optionPrice = 0;
+            $optionsData = [];
+
+            foreach ($this->selectedOptions as $name => $type) {
+                $option = Option::where('name', $name)->where('type', $type)->first();
+                if ($option) {
+                    $optionPrice += $option->additional_price;
+                    $optionsData[] = [
+                        'name' => $option->name,
+                        'type' => $option->type,
+                        'price' => $option->additional_price
+                    ];
+                }
+            }
+
+            $unitPrice += $optionPrice;
+            $subtotal = $unitPrice * $this->quantity;
+
+            $this->cart[] = [
+                'product_id' => $this->selectedProduct->id,
+                'product_name' => $productName,
+                'variation_id' => $variation ? $variation->id : null,
+                'variation_name' => $variation ? $variation->name : null,
+                'options' => $optionsData,
+                'quantity' => $this->quantity,
+                'unit_price' => $unitPrice,
+                'subtotal' => $subtotal,
+                'notes' => $this->notes
+            ];
+
+            $quantity = $this->quantity;
+
+            $this->updateTotal();
+            $this->resetSelection();
+
+            $this->dispatch('showToast', [
+                'type' => 'success',
+                'message' => 'Item Added to Cart',
+                'description' => 'Added ' . $quantity . 'x ' . $productName
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error adding to cart: ' . $e->getMessage());
+            $this->dispatch('showToast', [
+                'type' => 'danger',
+                'message' => 'Error Adding to Cart',
+                'description' => 'There was a problem adding this item to the cart.'
+            ]);
         }
-
-        $unitPrice += $optionPrice;
-        $subtotal = $unitPrice * $this->quantity;
-
-        $this->cart[] = [
-            'product_id' => $this->selectedProduct->id,
-            'product_name' => $productName,
-            'variation_id' => $variation ? $variation->id : null,
-            'variation_name' => $variation ? $variation->name : null,
-            'options' => $optionsData,
-            'quantity' => $this->quantity,
-            'unit_price' => $unitPrice,
-            'subtotal' => $subtotal,
-            'notes' => $this->notes
-        ];
-
-        $quantity = $this->quantity;
-
-        $this->updateTotal();
-        $this->resetSelection();
-
-        $this->dispatch('showToast', [
-            'type' => 'success',
-            'message' => 'Item Added to Cart',
-            'description' => 'Added ' . $quantity . 'x ' . $productName
-        ]);
     }
 
     public function removeFromCart($index)
@@ -303,11 +312,12 @@ class PosIndex extends Component
             $order->delivery_address = $this->deliveryAddress ?? '';
             $order->save();
 
-            Log::info('Order created with ID: ' . $order->id);
+            $orderId = $order->id; // Store UUID in variable for use in log messages and toast
+            Log::info('Order created with ID: ' . $orderId);
 
             foreach ($this->cart as $item) {
                 $orderItem = new OrderItem();
-                $orderItem->order_id = $order->id;
+                $orderItem->order_id = $orderId; // Use the stored UUID
                 $orderItem->product_id = $item['product_id'];
                 $orderItem->variation_id = $item['variation_id'];
                 $orderItem->quantity = $item['quantity'];
@@ -323,7 +333,7 @@ class PosIndex extends Component
             $this->dispatch('showToast', [
                 'type' => 'success',
                 'message' => 'Order Created',
-                'description' => 'Order #' . $order->id . ' has been created successfully!'
+                'description' => 'Order #' . $order->display_id . ' has been created successfully!'
             ]);
 
             // Refresh the order history component

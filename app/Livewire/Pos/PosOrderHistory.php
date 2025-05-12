@@ -7,6 +7,7 @@ use Illuminate\Support\Collection;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Url;
+use Livewire\Attributes\On;
 use Carbon\Carbon;
 
 class PosOrderHistory extends Component
@@ -25,8 +26,6 @@ class PosOrderHistory extends Component
     public $filterStatus = '';
 
     public $showOrderDetails = false;
-
-    protected $listeners = ['refreshOrderHistory' => '$refresh'];
 
     public function mount()
     {
@@ -67,8 +66,14 @@ class PosOrderHistory extends Component
         ]);
     }
 
-    public function completeOrder($orderId)
+    #[On('completeOrder')]
+    public function completeOrder($orderId = null)
     {
+        // For Livewire v3, the parameter comes in as an array, so we need to extract it
+        if (is_array($orderId) && isset($orderId['orderId'])) {
+            $orderId = $orderId['orderId'];
+        }
+
         $order = Order::find($orderId);
         if (!$order) {
             $this->dispatch('showToast', [
@@ -82,13 +87,19 @@ class PosOrderHistory extends Component
         $order->status = 'completed';
         $order->save();
 
+        // Refresh the selected order to update the UI
+        if ($this->selectedOrder && $this->selectedOrder->id === $orderId) {
+            $this->selectedOrder = Order::with(['items.product', 'items.variation', 'user'])->find($orderId);
+        }
+
         $this->dispatch('showToast', [
             'type' => 'success',
             'message' => 'Order Completed',
-            'description' => 'Order #' . $order->id . ' has been marked as completed'
+            'description' => 'Order #' . $order->display_id . ' has been marked as completed'
         ]);
 
-        $this->dispatch('refreshOrderHistory');
+        // No need to dispatch a refresh event, just refresh the component
+        $this->render();
     }
 
     public function confirmCancelOrder($orderId)
@@ -103,8 +114,14 @@ class PosOrderHistory extends Component
         ]);
     }
 
-    public function cancelOrder($orderId)
+    #[On('cancelOrder')]
+    public function cancelOrder($orderId = null)
     {
+        // For Livewire v3, the parameter comes in as an array, so we need to extract it
+        if (is_array($orderId) && isset($orderId['orderId'])) {
+            $orderId = $orderId['orderId'];
+        }
+
         $order = Order::find($orderId);
         if (!$order) {
             $this->dispatch('showToast', [
@@ -118,13 +135,19 @@ class PosOrderHistory extends Component
         $order->status = 'cancelled';
         $order->save();
 
+        // Refresh the selected order to update the UI
+        if ($this->selectedOrder && $this->selectedOrder->id === $orderId) {
+            $this->selectedOrder = Order::with(['items.product', 'items.variation', 'user'])->find($orderId);
+        }
+
         $this->dispatch('showToast', [
             'type' => 'warning',
             'message' => 'Order Cancelled',
-            'description' => 'Order #' . $order->id . ' has been cancelled'
+            'description' => 'Order #' . $order->display_id . ' has been cancelled'
         ]);
 
-        $this->dispatch('refreshOrderHistory');
+        // No need to dispatch a refresh event, just refresh the component
+        $this->render();
     }
 
     public function updateDeliveryInfo($orderId)
@@ -149,10 +172,15 @@ class PosOrderHistory extends Component
 
         $order->save();
 
+        // Refresh the selected order to update the UI immediately
+        if ($this->selectedOrder && $this->selectedOrder->id === $orderId) {
+            $this->selectedOrder = Order::with(['items.product', 'items.variation', 'user'])->find($orderId);
+        }
+
         $this->dispatch('showToast', [
             'type' => 'success',
             'message' => 'Delivery Information Updated',
-            'description' => 'Delivery details for order #' . $order->id . ' have been updated'
+            'description' => 'Delivery details for order #' . $order->display_id . ' have been updated'
         ]);
     }
 
@@ -175,6 +203,15 @@ class PosOrderHistory extends Component
     {
         $this->showOrderDetails = false;
         $this->selectedOrder = null;
+    }
+
+    #[On('refreshOrderHistory')]
+    public function refreshHistory()
+    {
+        // Refresh the current page
+        if ($this->selectedOrder) {
+            $this->selectedOrder = Order::with(['items.product', 'items.variation', 'user'])->find($this->selectedOrder->id);
+        }
     }
 
     public function render()
