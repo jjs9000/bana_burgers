@@ -154,6 +154,16 @@
                                         >
                                             View Details
                                         </button>
+                                        
+                                        <a href="{{ route('invoice.generate', ['orderId' => $order->id, 'output' => 'download']) }}"
+                                           target="_blank"
+                                           class="inline-flex items-center justify-center h-8 w-8 ml-1 font-medium tracking-tight text-white bg-blue-600 rounded-lg focus:outline-none hover:bg-blue-700 transition-colors duration-150"
+                                           title="Download Invoice"
+                                        >
+                                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                                            </svg>
+                                        </a>
                                     </td>
                                 </tr>
                             @empty
@@ -297,6 +307,50 @@
                         Placed: {{ $selectedOrder->created_at->format('M d, Y H:i') }}
                     </p>
                     
+                    <!-- Order Status Placeholder Image -->
+                    <div class="mb-4 flex-shrink-0 text-center" id="order-status-container-{{ $selectedOrder->id }}">
+                        <div class="rounded-lg bg-zinc-100 dark:bg-zinc-700 p-3 inline-block" id="order-status-image-{{ $selectedOrder->id }}">
+                            @if($selectedOrder->status === 'completed')
+                                <div class="h-24 w-24 mx-auto">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                                         class="w-full h-full text-green-500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                </div>
+                            @elseif($selectedOrder->status === 'pending')
+                                <div class="h-24 w-24 mx-auto">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         class="w-full h-full text-yellow-500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                </div>
+                            @elseif($selectedOrder->status === 'cancelled')
+                                <div class="h-24 w-24 mx-auto">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         class="w-full h-full text-red-500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                                    </svg>
+                                </div>
+                            @else
+                                <div class="h-24 w-24 mx-auto">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         class="w-full h-full text-blue-500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                </div>
+                            @endif
+                            <p class="text-sm mt-2 font-medium dark:text-white">
+                                {{ ucfirst($selectedOrder->status) }}
+                            </p>
+                        </div>
+                    </div>
+                    
                     <!-- Scrollable Content Area -->
                     <div class="overflow-y-auto flex-grow pr-2">
                         <!-- Order Status Section -->
@@ -335,6 +389,42 @@
                                     @if($selectedOrder->status === 'cancelled') disabled @endif
                                 >
                                     Cancel Order
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Invoice Actions Section -->
+                        <div class="mb-4">
+                            <div class="border-b border-zinc-200 dark:border-zinc-700 pb-3 mb-3">
+                                <h3 class="text-md font-semibold dark:text-white">Invoice</h3>
+                            </div>
+                            
+                            <div class="flex flex-wrap gap-2">
+                                <a href="{{ route('invoice.generate', ['orderId' => $selectedOrder->id, 'output' => 'download']) }}" 
+                                   target="_blank"
+                                   class="inline-flex items-center px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md text-sm">
+                                   <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                    </svg>
+                                    Download Invoice
+                                </a>
+                                
+                                <a href="{{ route('invoice.generate', ['orderId' => $selectedOrder->id, 'output' => 'stream']) }}" 
+                                   target="_blank"
+                                   class="inline-flex items-center px-3 py-2 bg-zinc-600 text-white hover:bg-zinc-700 rounded-md text-sm">
+                                   <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    View Invoice
+                                </a>
+                                
+                                <button onclick="printInvoice('{{ $selectedOrder->id }}')"
+                                   class="inline-flex items-center px-3 py-2 bg-zinc-500 text-white hover:bg-zinc-600 rounded-md text-sm">
+                                   <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
+                                    </svg>
+                                    Print Invoice
                                 </button>
                             </div>
                         </div>
@@ -449,3 +539,20 @@
     </div>
     @endif
 </div>
+
+<script>
+    function printInvoice(orderId) {
+        // Open the invoice in a new window
+        var invoiceUrl = "{{ route('invoice.generate', ['orderId' => ':orderId', 'output' => 'stream']) }}";
+        invoiceUrl = invoiceUrl.replace(':orderId', orderId);
+        
+        var printWindow = window.open(invoiceUrl, '_blank');
+        
+        // Wait for the page to load, then print
+        printWindow.onload = function() {
+            setTimeout(function() {
+                printWindow.print();
+            }, 1000); // Small delay to ensure PDF is fully loaded
+        };
+    }
+</script>

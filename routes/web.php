@@ -6,6 +6,7 @@ use App\Livewire\Settings\Profile;
 use App\Livewire\Pos\PosIndex;
 use App\Livewire\Pos\PosOrderHistory;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\InvoiceController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -25,6 +26,9 @@ Route::middleware(['auth'])->group(function () {
     // POS System Routes
     Route::get('pos', PosIndex::class)->name('pos.index');
     Route::get('pos/history', PosOrderHistory::class)->name('pos.history');
+
+    // Invoice Route
+    Route::get('invoice/{orderId}', [InvoiceController::class, 'generateInvoice'])->name('invoice.generate');
 
     Route::middleware(['auth'])->prefix('admin')->group(function () {
         Route::get('/products', \App\Livewire\Admin\ProductManager::class)->name('admin.products');
