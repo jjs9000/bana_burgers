@@ -22,6 +22,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             MenuSeeder::class,
+            // Uncomment the line below to seed 400 test orders
+            // TestOrdersSeeder::class,
         ]);
     }
 }

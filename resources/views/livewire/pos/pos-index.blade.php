@@ -223,14 +223,20 @@
                     <div class="bg-white dark:bg-zinc-800 rounded-lg shadow p-3 h-[80px] flex-shrink-0">
                         <h2 class="text-lg font-bold mb-2 dark:text-white">Categories</h2>
                         <div class="flex flex-wrap gap-2">
-                            @foreach($categories as $category)
-                                <button 
-                                    wire:click="selectCategory({{ $category->id }})"
-                                    class="px-3 py-1 rounded-md border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 dark:text-white text-sm"
-                                >
-                                    {{ $category->name }}
-                                </button>
-                            @endforeach
+                            @if(isset($categories) && $categories instanceof \Illuminate\Support\Collection && $categories->count() > 0)
+                                @foreach($categories as $category)
+                                    <button 
+                                        wire:click="selectCategory({{ $category->id }})"
+                                        class="px-3 py-1 rounded-md border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-500 dark:text-white text-sm"
+                                    >
+                                        {{ $category->name }}
+                                    </button>
+                                @endforeach
+                            @else
+                                <div class="text-sm text-zinc-500 dark:text-zinc-400">
+                                    No categories available
+                                </div>
+                            @endif
                         </div>
                     </div>
                     
@@ -243,12 +249,13 @@
                                     wire:click="selectProduct('{{ $product->id }}')"
                                     class="bg-zinc-50 dark:bg-zinc-700 p-3 rounded-lg shadow cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-600 transition h-[300px] flex flex-col"
                                 >
-                                    <!-- Placeholder Image -->
-                                    <div class="w-full h-50% mb-2 bg-zinc-200 dark:bg-zinc-600 rounded-md overflow-hidden flex-shrink-0">
+                                    <!-- Standardized Product Image -->
+                                    <div class="w-full h-[150px] mb-2 bg-zinc-200 dark:bg-zinc-600 rounded-md overflow-hidden flex-shrink-0">
                                         <img 
                                             src="{{ $product->image_path ? asset('storage/' . $product->image_path) : 'https://placehold.co/300x200/10B981/FFFFFF?text=' . urlencode($product->name) }}" 
                                             alt="{{ $product->name }}" 
-                                            class="w-full h-full object-cover"
+                                            class="w-full h-full object-cover object-center"
+                                            loading="lazy"
                                         >
                                     </div>
                                     <h3 class="font-bold dark:text-white text-sm line-clamp-1">{{ $product->name }}</h3>
@@ -542,7 +549,27 @@
     
     <!-- JavaScript for Livewire-Alpine integration -->
     <script>
+        // Keep track of whether the listener has been registered to prevent duplicates
+        window.toastListenerRegistered = window.toastListenerRegistered || false;
+        
         document.addEventListener('livewire:init', function() {
+            // Prevent duplicate registration of toast event listeners
+            if (window.toastListenerRegistered) {
+                console.log('Toast listener already registered, skipping duplicate registration');
+                return;
+            }
+            
+            // Mark as registered to prevent duplicates
+            window.toastListenerRegistered = true;
+            
+            // In Livewire 3, we need to use Livewire.removeEventListener instead of off
+            // Try to clean up existing listeners if any
+            try {
+                Livewire.removeEventListener('showToast');
+            } catch (e) {
+                console.log('No previous toast listeners to clean up');
+            }
+            
             // Handle toast notifications
             Livewire.on('showToast', (data) => {
                 console.log('Toast notification triggered:', data);
@@ -558,8 +585,6 @@
                     const orderId = orderIdMatch ? orderIdMatch[1] : '';
                     
                     console.log('Success toast detected for order creation - Order ID:', orderId);
-                    console.log('Raw description string:', data[0].description);
-                    console.log('Toast message:', data[0].message);
                     
                     // Prevent any other actions during animation duration
                     // Show the success animation with a small delay to ensure toast is processed first
@@ -571,6 +596,42 @@
                     return;
                 }
             });
+            
+            // Clean up event listener when the component is disconnected
+            document.addEventListener('livewire:disconnect', function() {
+                if (window.toastListenerRegistered) {
+                    try {
+                        Livewire.removeEventListener('showToast');
+                    } catch (e) {
+                        console.log('Error cleaning up toast listener:', e);
+                    }
+                    window.toastListenerRegistered = false;
+                    console.log('Toast listener removed during component disconnect');
+                }
+                
+                if (window.confirmationListenerRegistered) {
+                    try {
+                        Livewire.removeEventListener('showConfirmation');
+                    } catch (e) {
+                        console.log('Error cleaning up confirmation listener:', e);
+                    }
+                    window.confirmationListenerRegistered = false;
+                    console.log('Confirmation listener removed during component disconnect');
+                }
+            });
+            
+            // Keep track of confirmation listener
+            window.confirmationListenerRegistered = window.confirmationListenerRegistered || false;
+            
+            // Clean up previous confirmation listeners
+            if (window.confirmationListenerRegistered) {
+                try {
+                    Livewire.removeEventListener('showConfirmation');
+                } catch (e) {
+                    console.log('No previous confirmation listeners to clean up');
+                }
+            }
+            window.confirmationListenerRegistered = true;
             
             // Handle confirmation modal
             Livewire.on('showConfirmation', (data) => {
